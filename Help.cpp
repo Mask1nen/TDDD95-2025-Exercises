@@ -6,11 +6,6 @@
 
 using namespace std;
 
-struct sentencePair {
-    vector<string> sentence1;
-    vector<string> sentence2;
-};
-
 vector<string> splitSentence(string sentence) {
     vector<string> words;
     stringstream ss(sentence);
@@ -25,98 +20,109 @@ bool isPlaceholder(string word) {
     return !word.empty() && word.front() == '<' && word.back() == '>';
 }
 
-
-bool attemptMapping(vector<string> sentence1, vector<string> sentence2, unordered_map<string, string> validplaceholders, unordered_map<string, vector<string>> placeholdervalues, int index) {
-
-    for (auto entry: placeholdervalues) {
-        if (entry.second.size() > 1) {
-
-        }
-    }
-    
-}
-
-sentencePair applyPlaceholder(vector<string> sentence1, vector<string> sentence2, unordered_map<string,string> validplaceholders) {
-    for (int i = 0; i < sentence1.size(); i++) {
-        string word1 = sentence1[i];
-        string word2 = sentence2[i];
-
-        if(isPlaceholder(word1)) {
-            sentence1[i] = validplaceholders[word1];
-        }
-        if(isPlaceholder(word2)) {
-            sentence2[i] = validplaceholders[word2];
-        }
-        sentencePair sentences = {sentence1, sentence2};
-        return sentences;
-    }
-}
-
 int main() {
-    ifstream inputFile("help_input.txt");  // Open the file for reading
-    if (!inputFile) {
-        cerr << "Error: Could not open input.txt!" << endl;
-        return 1;
-    }
-
     int testCases;
-    inputFile >> testCases;
-    inputFile.ignore();  // Ignore newline after testCases
-    unordered_map<string, vector<string>> placeholdervalues;
-    unordered_map<string, string> validplaceholders;
+    cin >> testCases;
+    cin.ignore();
 
     //Fetch input
+    string match = "";
+    vector<string> output;
     while (testCases--) {
+        unordered_map<string, string> placeholdervalues1;
+        unordered_map<string, string> placeholdervalues2;
         string pattern1, pattern2;
         vector<string> sentence1, sentence2;
-        getline(inputFile, pattern1);
-        getline(inputFile, pattern2);
+        getline(cin, pattern1);
+        getline(cin, pattern2);
+        if (pattern1.empty() || pattern2.empty()) {
+            continue; // Skip empty input lines
+        }
         sentence1 = splitSentence(pattern1);
         sentence2 = splitSentence(pattern2);
 
-        //If pattern1 size does not match pattern2 size there cannot be a match
-        if(sentence1.size() != sentence2.size()) {
-            cout << "-" << endl; 
-        }
-        else {
+        //Set match as false, changed by logic below if a match is found.
+        match = "-";
+        if(sentence1.size() == sentence2.size()) {
+            bool updated = true;
+            while(updated) {
+                updated = false;
+                for (int i = 0; i < sentence1.size(); i++) {
+                    string word1 = sentence1[i];
+                    string word2 = sentence2[i];
+
+                    //If word1 is placeholder
+                    if(isPlaceholder(word1)) {
+                        //If placeholder value has not been recorded and the second word is not a placeholder add value to candidate placeholders
+                        if (placeholdervalues1.count(word1) == 0 && !isPlaceholder(word2)) {
+                            placeholdervalues1[word1] = word2;
+                        }
+                    }
+
+                    //If word2 is placeholder
+                    if(isPlaceholder(word2)) {
+                        //If placeholder value has not been recorded and the first word is not a placeholder add value to candidate placeholders
+                        if (placeholdervalues2.count(word2) == 0 && !isPlaceholder(word1)) {
+                            placeholdervalues2[word2] = word1;
+                        }
+                    }
+
+                }
+            
+                for (int i = 0; i < sentence1.size(); i++) {
+                    string word1 = sentence1[i];
+                    string word2 = sentence2[i];
+
+                    //If placeholder exists in placeholder1 map as key, replace with value
+                    if (placeholdervalues1.count(word1) > 0) {
+                        updated = true;
+                        sentence1[i] = placeholdervalues1[word1];
+                    }
+
+                    //If word exists in placeholder2 map, replace with value
+                    if (placeholdervalues2.count(word2) > 0) {
+                        updated = true;
+                        sentence2[i] = placeholdervalues2[word2];
+                    }
+                }
+            }
+        
+            //Recreate strings from vectors after placeholder handling
+            string resultPhrase1 = "";
+            string resultPhrase2 = "";
+
             for (int i = 0; i < sentence1.size(); i++) {
                 string word1 = sentence1[i];
                 string word2 = sentence2[i];
 
-                //If word1 is placeholder
-                if(isPlaceholder(word1)) {
-                    //If placeholder value has not been recorded and the second word is not a placeholder add value to candidate placeholders
-                    if (placeholdervalues.count(word1) == 0 && !isPlaceholder(word2)) {
-                        placeholdervalues[word1].push_back(sentence2[i]);
-                    }
+                if (!resultPhrase1.empty()) {
+                    resultPhrase1 += " ";
                 }
-
-                //If word1 is placeholder
-                if(isPlaceholder(word2)) {
-                    //If placeholder value has not been recorded and the first word is not a placeholder add value to candidate placeholders
-                    if (placeholdervalues.count(word2) == 0 && !isPlaceholder(word1)) {
-                        placeholdervalues[word2].push_back(sentence1[i]);
-                    }
+                if (!resultPhrase2.empty()) {
+                    resultPhrase2 += " ";
                 }
-
+                if (isPlaceholder(word1)) {
+                    resultPhrase1 += "random";
+                }
+                else {
+                    resultPhrase1 += word1;
+                }
+                if (isPlaceholder(word2)) {
+                    resultPhrase2 += "random";
+                }
+                else {
+                    resultPhrase2 += word2;
+                }
             }
-
-
+            //cout << resultPhrase1 << endl;
             
-            if(sentence1 == sentence2) {
-                for(int i = 0; i < sentence1.size(); i++) {
-                    cout << sentence1[i] << " ";
-                }
-                cout << endl;
-            }
-            else {
-                cout << "-" << endl;
+            //cout << resultPhrase2 << endl;
+            if(resultPhrase1 == resultPhrase2) {
+                match = resultPhrase1;
             }
         }
-
+        
+        cout << match << endl;
     }
-
-
-    inputFile.close();
     return 0;
 }
