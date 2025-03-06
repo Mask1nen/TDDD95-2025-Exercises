@@ -4,10 +4,10 @@
 #include <string>
 using namespace std;
 
-int main()
+void readFromFile(string fileName)
 {
     string line;
-    ifstream myfile("example.txt");
+    ifstream myfile(fileName);
     if (myfile.is_open())
     {
         while (getline(myfile, line)) // Cin / getline
@@ -19,6 +19,4 @@ int main()
 
     else
         cout << "Unable to open file";
-
-    return 0;
 }
